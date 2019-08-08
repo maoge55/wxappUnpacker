@@ -9,7 +9,7 @@ function doWxss(dir,cb){
 	GwxCfg.prototype={$gwx(){}};
 	for(let i=0;i<300;i++)GwxCfg.prototype["$gwx"+i]=GwxCfg.prototype.$gwx;
 	let runList={},pureData={},result={},actualPure={},importCnt={},frameName="",onlyTest=true,blockCss=[];//custom block css file which won't be imported by others.(no extension name)
-	function cssRebuild(data){//need to bind this as {cssFile:__name__} before call
+	function cssRebuild(data){//need to bind this as {cssFcleile:__name__} before call
 		let cssFile;
 		function statistic(data){
 			function addStat(id){
@@ -63,14 +63,40 @@ function doWxss(dir,cb){
 			result[cssFile]+=makeup(data);
 		};
 	}
-	function runVM(name,code){
-		let wxAppCode={},handle={cssFile:name};
-		let vm=new VM({sandbox:Object.assign(new GwxCfg(),{__wxAppCode__:wxAppCode,setCssToHead:cssRebuild.bind(handle)})});
-		vm.run(code);
-		for(let name in wxAppCode)if(name.endsWith(".wxss")){
-			handle.cssFile=path.resolve(frameName,"..",name);
-			wxAppCode[name]();
+	function runVM(name, code) {
+
+		let wxAppCode = {}, handle = { cssFile: name };
+
+		let tsandbox = {
+
+			__vd_version_info__: "",
+
+			$gwx: GwxCfg.prototype["$gwx"],
+
+			__mainPageFrameReady__: GwxCfg.prototype["$gwx"],
+
+			__wxAppCode__: wxAppCode,
+
+			setCssToHead: cssRebuild.bind(handle)
+
 		}
+
+		let vm = new VM({ sandbox: tsandbox });
+
+		vm.run(code);
+
+		for (let name in wxAppCode) {
+
+			if (name.endsWith(".wxss")) {
+
+				handle.cssFile = path.resolve(frameName, "..", name);
+
+				wxAppCode[name]();
+
+			}
+
+		}
+
 	}
 	function preRun(dir,frameFile,mainCode,files,cb){
 		wu.addIO(cb);
